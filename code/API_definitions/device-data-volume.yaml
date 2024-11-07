@@ -6,7 +6,7 @@ info:
 
     # Device Data Volume
 
-    The API enables customers to retrieve data usage information for a dedicated SIM card, offering estimated remaining data volume categories like <200MB, <1GB, <5GB, and >=5GB. It also allows subscription to changes in data volume status.
+    The API enables customers to retrieve data usage information for a dedicated SIM card, offering estimated remaining data volume categories like <200MiB, <1GiB, <5GiB, and >=5GiB. It also allows subscription to changes in data volume status.
 
     Additionally, a check operation is provided to determine if the remaining data volume exceeds a user-specified threshold.
     
@@ -21,9 +21,6 @@ info:
     - The endpoint `POST /retrieve` allows customers to retrieve the remaining device data volume.
     - The endpoint `POST /check` allows customers to Check if the remaining data volume is above a certain threshold.
 
-  termsOfService: http://swagger.io/terms/
-  contact:
-    name: Deutsche Telekom (Noel Wirzius)
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
@@ -33,7 +30,7 @@ externalDocs:
   url: https://github.com/camaraproject/
 
 servers:
-  - url: "{apiRoot}/device-data-volume/v0"
+  - url: "{apiRoot}/device-data-volume/vwip"
     variables:
       apiRoot:
         default: http://localhost:9092
@@ -82,8 +79,6 @@ paths:
           $ref: "#/components/responses/Generic404"
         "406":
           $ref: "#/components/responses/Generic406"
-        "415":
-          $ref: "#/components/responses/Generic415"
         "429":
           $ref: "#/components/responses/Generic429"
         "500":
@@ -132,8 +127,6 @@ paths:
           $ref: "#/components/responses/Generic404"
         "406":
           $ref: "#/components/responses/Generic406"
-        "415":
-          $ref: "#/components/responses/Generic415"
         "429":
           $ref: "#/components/responses/Generic429"
         "500":
@@ -170,12 +163,12 @@ components:
       properties:
         dataVolumeCategory:
           type: string
-          description: Estimated remaining data volume category
+          description: Estimated remaining data volume category, where "MiB" is 2^20 bytes and "GiB" is 2^30 bytes
           enum:
-            - "<200MB"
-            - "<1GB"
-            - "<5GB"
-            - ">=5GB"
+            - "<200MiB"
+            - "<1GiB"
+            - "<5GiB"
+            - ">=5GiB"
       required:
         - dataVolumeCategory
 
@@ -272,12 +265,32 @@ components:
         device:
           $ref: "#/components/schemas/Device"
         volumeToCheck:
-          type: string
+          type: object
           description: Volume threshold to check against
+          properties:
+            value:
+              description: Quantity of volume to check
+              type: integer
+              example: 500
+              format: int32
+              minimum: 0
+              maximum: 1024
+            unit:
+              $ref: "#/components/schemas/VolumeUnitEnum"
+          required:
+            - value
+            - unit
       required:
         - device
         - volumeToCheck
     
+    VolumeUnitEnum:
+      description: Enumeration of volume units, where "MiB" is 2^20 bytes and "GiB" is 2^30 bytes
+      type: string
+      enum:
+        - MiB
+        - GiB
+       
     ErrorInfo:
       type: object
       required:
@@ -367,22 +380,6 @@ components:
                 status: 406
                 code: NOT_ACCEPTABLE
                 message: The server cannot produce a response matching the content requested by the client through `Accept-*` headers.
-    Generic415:
-      description: Unsupported Media Type
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorInfo"
-          examples:
-            GENERIC_415_UNSUPPORTED_MEDIA_TYPE:
-              description: Payload format of the request is in an unsupported format by the Server. Should not happen
-              value:
-                status: 415
-                code: UNSUPPORTED_MEDIA_TYPE
-                message: The server refuses to accept the request because the payload format is in an unsupported format.
     Generic429:
       description: Too Many Requests
       headers:
